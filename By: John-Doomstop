@@ -1,0 +1,92 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "JOHN'S CHAOS HUB | Pro Head Sitter",
+   LoadingTitle = "Loading Advanced Script...",
+   LoadingSubtitle = "by JOHN",
+   ConfigurationSaving = { Enabled = false },
+   KeySystem = false
+})
+
+local Tab = Window:CreateTab("Main", 4483362458)
+
+local SelectedTarget = nil
+local Sitting = false
+local AnimTrack = nil
+local SitAnimID = "rbxassetid://179224234" -- ID ท่าทางท่านั่งมาตรฐาน (เปลี่ยน ID ได้ตามใจชอบ)
+
+-- ฟังก์ชั่นสำหรับดึงรายชื่อผู้เล่นแบบ (DisplayName | Name)
+local function getPlayerList()
+    local list = {}
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p ~= game.Players.LocalPlayer then
+            table.insert(list, p.DisplayName .. " (@" .. p.Name .. ")")
+        end
+    end
+    return list
+end
+
+-- สร้าง Dropdown เลือกผู้เล่น
+local PlayerDropdown = Tab:CreateDropdown({
+   Name = "Select Target (Nickname | RealName)",
+   Options = getPlayerList(),
+   CurrentOption = {""},
+   MultipleOptions = false,
+   Flag = "TargetDrop",
+   Callback = function(Option)
+      SelectedTarget = string.match(Option[1], "@(%w+)") -- ดึงเฉพาะชื่อจริงหลังเครื่องหมาย @
+   end,
+})
+
+-- ปุ่ม Refresh รายชื่อผู้เล่น
+Tab:CreateButton({
+   Name = "Refresh Player List",
+   Callback = function()
+      PlayerDropdown:Refresh(getPlayerList(), true)
+   end,
+})
+
+-- ปุ่มเปิด/ปิดฟังก์ชั่น
+Tab:CreateToggle({
+   Name = "Mount on Head & Sit",
+   CurrentValue = false,
+   Flag = "SitToggle",
+   Callback = function(Value)
+      Sitting = Value
+      local lp = game.Players.LocalPlayer
+      local char = lp.Character
+      local hum = char:WaitForChild("Humanoid")
+      local root = char:WaitForChild("HumanoidRootPart")
+
+      if Sitting then
+         -- เริ่มเล่น Animation ท่าทางการนั่ง
+         local anim = Instance.new("Animation")
+         anim.AnimationId = SitAnimID
+         AnimTrack = hum:LoadAnimation(anim)
+         AnimTrack:Play()
+         
+         task.spawn(function()
+            while Sitting do
+               local target = game.Players:FindFirstChild(SelectedTarget)
+               if target and target.Character and target.Character:FindFirstChild("Head") then
+                  -- วาร์ปล็อคตำแหน่งไว้บนหัวตรงๆ
+                  root.CFrame = target.Character.Head.CFrame * CFrame.new(0, 1.5, 0)
+               end
+               task.wait()
+            end
+            -- หยุด Animation เมื่อปิด
+            if AnimTrack then AnimTrack:Stop() end
+         end)
+      else
+         if AnimTrack then AnimTrack:Stop() end
+      end
+   end,
+})
+
+Rayfield:Notify({
+   Title = "Script Ready",
+   Content = "เลือกเป้าหมายจากรายการแล้วกดเปิดได้เลย!",
+   Duration = 5,
+   Image = 4483362458,
+})
+
